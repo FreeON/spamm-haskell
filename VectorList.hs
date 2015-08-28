@@ -5,13 +5,14 @@ module VectorList
 , VListEntry
 , vListEntries
 , vListLength
+, vRmZeros
 ) where
-
-type VListEntry a = (Int, a)
-type VectorList a = (Int, [VListEntry a])
 
 -- vector length and list of entries (index, value) ;
 -- including zero-value entries is optional
+
+type VListEntry a = (Int, a)
+type VectorList a = (Int, [VListEntry a])
 
 vListLength :: VectorList a -> Int
 vListLength (l, _) = l
@@ -24,3 +25,6 @@ vEntryIndex (i, _) = i
 
 vEntryVal :: VListEntry a -> a
 vEntryVal (_, x) = x
+
+vRmZeros :: (Eq a, Num a) => VectorList a -> VectorList a
+vRmZeros (l, ixs) = (l, filter ((/= 0) . vEntryVal) ixs)

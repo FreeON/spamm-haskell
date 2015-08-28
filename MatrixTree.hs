@@ -20,7 +20,7 @@ module MatrixTree
 
 -- a recursive matrix data type that efficiently encodes sparsity
 
-import MatrixList (MatrixList, mEntryVal)
+import MatrixList (MatrixList, mRmZeros)
 import MatrixMarket (mmReadFile, mmWriteFile)
 
 type Size = Int ; type Value = Double ; type Norm = Double
@@ -71,9 +71,9 @@ mmWriteTree tree format filePath =
             mmWriteFile (treeToMatrixList tree) format filePath
 
 matrixListToTree :: MatrixList Double -> MatrixTree
-matrixListToTree (h, w, ijxs) = (h, w, setNorm $ foldr addVal (Zero p) entries)
-                                where p = nextPowOf2 $ max h w
-                                      entries = filter ((/= 0) . mEntryVal) ijxs
+matrixListToTree mList = (h, w, setNorm $ foldr addVal (Zero p) ijxs)
+                 where (h, w, ijxs) = mRmZeros mList
+                       p = nextPowOf2 $ max h w
 
 addVal :: (Int, Int, Value) -> MTree -> MTree
 addVal (_, _, x) (Leaf _ _) = Leaf 0 x
@@ -83,10 +83,10 @@ addVal (i, j, x) (Zero s)
  | within [i,jr]  = Square s 0 zro (addVal (i,  jr, x) zro) zro zro
  | within [ib,j]  = Square s 0 zro zro (addVal (ib,  j, x) zro) zro
  | within [ib,jr] = Square s 0 zro zro zro (addVal (ib, jr, x) zro)
- where halfs = s `div` 2
+ where zro = Zero halfs
        within = all (<= halfs)
        ib = i - halfs ; jr = j - halfs
-       zro = Zero halfs
+       halfs = s `div` 2
 addVal (i, j, x) (Square s _ tl tr bl br) = Square s 0 newtl newtr newbl newbr
        where [newtl, newtr, newbl, newbr]
                  | within [i,j]   = [addVal (i,  j,  x) tl, tr, bl, br]
