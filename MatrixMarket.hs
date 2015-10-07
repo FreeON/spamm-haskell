@@ -158,7 +158,7 @@ mmParseHeader header
 
 mmReadMat :: MMFormat -> MMField -> [String] -> [String] -> (MMList, String)
 mmReadMat format field headerRest rest = (mmList, comments)
-          where sym = mmParseSym headerRest field
+          where sym = mmParseSym field headerRest
                 (comments, contents) = mmReadComments (rest, [])
                 mmList = case format of
                               Array      -> mmReadMatArr  sym field contents
@@ -171,8 +171,8 @@ mmReadVec format field rest = (mmList, comments)
                               Array      -> mmReadVecArr  field contents
                               Coordinate -> mmReadVecCoor field contents
 
-mmParseSym :: [String] -> MMField -> MMSym
-mmParseSym rest field
+mmParseSym :: MMField -> [String] -> MMSym
+mmParseSym field rest
            | null rest       = error "Invalid symmetry type"
            | null symRead    = error "Invalid symmetry type"
            | field /= Complex && sym == Hermitian
@@ -181,11 +181,14 @@ mmParseSym rest field
            where symRead = mmReads $ head rest :: [(MMSym, String)]
                  sym = fst . head $ symRead
 
-mmReadComments :: ([String], [String]) -> Char -> ([String], String)
-mmReadComments (text@(first:rest), comments) commentChar
+mmReadComments :: ([String], [String]) -> ([String], String)
+mmReadComments (text@(first:rest), comments)
       | head first == commentChar
                   = mmReadComments (rest, tail first:comments) commentChar
       | otherwise = (text, joinStr "\n" $ reverse comments)
+
+-- maybe make a single mmGetSize function that does the next four and then
+-- branch into four functions
 
 mmReadMatArr :: MMSym -> MMField -> [String] -> MMList
 mmReadMatArr sym field dimLine:valueLines
